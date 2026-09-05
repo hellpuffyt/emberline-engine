@@ -1,0 +1,12 @@
+{
+  "images": {
+    "coin": {
+      "src": "coin@4.png",
+      "w": 16,
+      "h": 16,
+      "frames": 4
+    }
+  },
+  "sounds": {},
+  "data": {}
+}

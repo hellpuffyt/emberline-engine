@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ember Run — Emberline demo</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0e1020; color: #dfe4ff; font: 14px/1.5 system-ui, sans-serif; }
+  main { display: grid; gap: 12px; justify-items: center; padding: 16px; }
+  canvas { image-rendering: pixelated; width: min(96vw, 960px); aspect-ratio: 16 / 9; height: auto; border-radius: 6px; box-shadow: 0 8px 40px #0008; outline: none; }
+  canvas:focus-visible { box-shadow: 0 0 0 3px #ff6b35, 0 8px 40px #0008; }
+  h1 { font-size: 18px; margin: 0; letter-spacing: .04em; }
+  p { margin: 0; color: #9aa4d6; max-width: 60ch; text-align: center; }
+  kbd { background: #1f2440; border: 1px solid #3a4170; border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; font: inherit; }
+  #status { min-height: 1.5em; color: #ffd166; }
+</style>
+<main>
+  <h1>Ember Run <span style="color:#ff6b35">·</span> Emberline engine demo</h1>
+  <canvas id="game" tabindex="0" aria-label="Ember Run game. Arrow keys move, space jumps, hold R to rewind time."></canvas>
+  <p>
+    <kbd>←</kbd><kbd>→</kbd> move · <kbd>space</kbd> jump · hold <kbd>R</kbd> to rewind time · <kbd>F5</kbd> save · <kbd>F9</kbd> load · <kbd>`</kbd> debug overlay
+  </p>
+  <p>Every frame of input is recorded. Rewinding restores an exact earlier state and lets you branch; saves are replayable input logs.</p>
+  <div id="status" role="status" aria-live="polite"></div>
+</main>
+<script type="module" src="../dist/demo/main.js"></script>
+</html>
