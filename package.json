@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test \"dist/test/*.test.js\"",
+    "test": "npm run build && node tools/test.mjs",
     "pack": "node tools/pack.mjs demo/assets demo/assets/manifest.json",
     "demo": "npm run build && node tools/serve.mjs",
     "headless": "npm run build && node dist/demo/headless.js",
