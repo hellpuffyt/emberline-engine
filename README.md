@@ -5,7 +5,7 @@
 Emberline runs a fixed-step, deterministic simulation and records every
 input frame. That one design decision gives you, for free and for every game
 built on it: **hold-to-rewind** gameplay, **replays**, **save files that are
-input logs** (tiny, verifiable, cheat-resistant), **desync-proof
+input logs** (tiny, and verifiable by replaying them), **desync-proof
 networking** later, and — as the demo shows — a bot that plays your level by
 *searching the future and rewinding*.
 
@@ -14,10 +14,10 @@ engine. Runs in the browser and headless in Node.
 
 ```
 $ npm test
-ℹ pass 17
+ℹ pass 24
 
 $ npm run headless
-search: level completed in 313 expansions, 154 ms, 189 states
+search: level completed in 313 expansions, 206 ms, 189 states   # time varies by machine
 tick 900: player at (427.8, 178.0), coins 2/9, deaths 0, won true
 state hash: 65a217ed  (inputs: 900 ticks)
 fresh replay of the input log: identical
@@ -91,7 +91,10 @@ rectangles and sprites — because that is not where the idea lives.
 Every claim above has a test: identical hashes for identical inputs (and
 different for a different seed), rewind to an exact earlier hash with future
 inputs forgotten, scrubbing that preserves the future, history bounds,
-save/load round trip *and* tamper rejection, loop step accounting, physics
+save/load round trip *and* rejection of edited files (an integrity check,
+not a signature — see `SECURITY.md`), property tests that replay, rewind,
+seek and save/load hundreds of random input logs (including across
+history trimming), loop step accounting, physics
 resolution on both axes with sides reported, triggers that do not block,
 keyboard sticky taps, asset packing from real PNG bytes, scene stacking,
 audio from events, behaviours failing loudly when unregistered. CI runs the

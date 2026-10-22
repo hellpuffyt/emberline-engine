@@ -1,6 +1,6 @@
 # Testing
 
-`npm test` compiles with `tsc --strict` and runs `node --test` — 17 tests,
+`npm test` compiles with `tsc --strict` and runs `node --test` — 24 tests,
 under two seconds. No test framework beyond Node's built-in runner.
 
 | Suite | File | What it proves |
@@ -8,6 +8,8 @@ under two seconds. No test framework beyond Node's built-in runner.
 | ECS | `test/ecs.test.ts` | Queries return ids ascending and only complete matches; add/remove/destroy; snapshot is a deep copy that also restores the id counter; event bus filtering and clearing; canonical hashing is key-order independent; RNG reproduces and restores. |
 | Physics | `test/physics.test.ts` | Gravity lands a body exactly on the ground with `grounded` and a `bottom` collision event; walls stop motion flush with the right `side`; `bounce = 1` reflects; triggers fire without blocking; ghosts pass through; world bounds clamp. |
 | Timeline | `test/timeline.test.ts` | Identical inputs + seed → identical hash, different seed → different; rewind reaches the exact hash first seen at that tick and forgets the future; seek preserves the future; history bound; save → load reproduces the hash, tampered inputs and bad files are rejected; the game loop converts variable frame times into whole fixed steps and caps stalls. |
+| Determinism properties | `test/property.test.ts` | Over 60 generated cases each (seeded, reproducible): identical hashes at every tick for identical inputs; `rewind(k)` reaches the exact hash of tick−k and replay returns to the same end state; `seek` anywhere and back preserves the future; after history trimming, rewinding to the oldest tick and save → load still reproduce the original hashes; reusing one mutated input object behaves like fresh frames; out-of-range `rewind` clamps. |
+| Demo server | `test/serve.test.ts` | Malformed percent-encoding gets 400 instead of killing the server; traversal is refused. |
 | Assets, input, scenes, scripts, debug | `test/misc.test.ts` | PNG header parsing on real PNG bytes built in-test; manifest packing incl. `@N` strips; loader progress and frame rects; keyboard sticky taps, sorted keys, capture/preventDefault, blur; edge helpers; scene stack push/pop; behaviours run and fail loudly when unregistered; audio played from events; overlay and inspector output. |
 
 ## Real execution
