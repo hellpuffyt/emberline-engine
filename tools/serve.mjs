@@ -9,7 +9,14 @@ const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 
 createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://x');
-  let path = decodeURIComponent(url.pathname);
+  let path;
+  try {
+    path = decodeURIComponent(url.pathname);
+  } catch {
+    // Malformed percent-encoding used to throw here and kill the server.
+    res.writeHead(400).end();
+    return;
+  }
   if (path === '/') path = '/demo/index.html';
   const file = normalize(join(root, path));
   if (!file.startsWith(root + sep)) {
@@ -24,4 +31,4 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404).end('not found');
   }
-}).listen(port, () => console.log(`Emberline demo: http://localhost:${port}/`));
+}).listen(port, '127.0.0.1', () => console.log(`Emberline demo: http://localhost:${port}/`));
