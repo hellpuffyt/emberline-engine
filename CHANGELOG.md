@@ -5,6 +5,26 @@ Save-file format changes are called out explicitly.
 
 ## [Unreleased]
 
+### Fixed
+
+- Keyframes now record the previous tick's input (`Keyframe.prevInput`).
+  Without it, rewinding to the oldest keyframe after history trimming, and
+  loading any save whose keyframe is not tick 0, replayed `pressed()` edges
+  differently, and `loadGame` rejected legitimate saves. **Save format:**
+  `timeline.keyframe.prevInput` is a new optional field; older saves still
+  load (with an empty previous frame, as before).
+- `Timeline.step` copies the input frame, so reusing and mutating one frame
+  object no longer rewrites recorded history.
+- `rewind` with a negative count clamps instead of throwing.
+- Demo server binds `127.0.0.1` and answers 400 to malformed percent-encoding
+  instead of crashing.
+
+### Added
+
+- `test/property.test.ts` (determinism/rewind/seek/save properties over
+  generated input logs) and `test/serve.test.ts`.
+- `.editorconfig`, `docs/PRODUCTION_READINESS.md`.
+
 ## [0.1.0] — 2026-09-06
 
 First release. Save format `emberline-save` v1.

@@ -19,6 +19,11 @@ export interface Keyframe {
   tick: number;
   world: WorldState;
   rng: number;
+  /** Input of the tick before `tick`. Systems read it through
+   * `ctx.prevInput` (e.g. `pressed()`), so it is part of the state a replay
+   * must start from. Optional only so that saves written before it existed
+   * still parse; they replay with an empty previous frame. */
+  prevInput?: InputFrame;
 }
 
 export interface TimelineState {
@@ -65,8 +70,11 @@ export class Timeline {
 
   /** Advances one fixed step with the given input. */
   step(input: InputFrame): void {
-    this.inputs.push(input);
-    this.simulate(input);
+    // Record a private copy: a caller that reuses and mutates one frame
+    // object must not be able to rewrite recorded history.
+    const frame = structuredClone(input);
+    this.inputs.push(frame);
+    this.simulate(frame);
     if (this._tick % this.keyframeEvery === 0) this.keyframes.push(this.keyframeNow());
     this.trim();
   }
@@ -87,7 +95,12 @@ export class Timeline {
   }
 
   private keyframeNow(): Keyframe {
-    return { tick: this._tick, world: this.world.snapshot(), rng: this.rng.state() };
+    return {
+      tick: this._tick,
+      world: this.world.snapshot(),
+      rng: this.rng.state(),
+      prevInput: structuredClone(this.prevInput),
+    };
   }
 
   private trim(): void {
@@ -110,7 +123,7 @@ export class Timeline {
   /** Rewinds `ticks` steps (clamped to history) and forgets everything
    * after the new position, so play continues on a new branch. */
   rewind(ticks: number): void {
-    this.seekTo(Math.max(this.oldestTick, this._tick - ticks), true);
+    this.seekTo(Math.max(this.oldestTick, this._tick - Math.max(0, ticks)), true);
   }
 
   /** Jumps to any recorded tick without discarding history (scrubbing). */
@@ -124,7 +137,7 @@ export class Timeline {
     this.world.restore(kf.world);
     this.rng.restore(kf.rng);
     this._tick = kf.tick;
-    this.prevInput = kf.tick > this.inputsBase ? this.inputs[kf.tick - this.inputsBase - 1] : EMPTY_FRAME;
+    this.prevInput = structuredClone(kf.prevInput ?? EMPTY_FRAME);
     while (this._tick < target) this.simulate(this.inputs[this._tick - this.inputsBase]);
     if (truncate) {
       this.inputs.length = target - this.inputsBase;
@@ -159,6 +172,7 @@ export class Timeline {
     t.world.restore(state.keyframe.world);
     t.rng.restore(state.keyframe.rng);
     t._tick = state.keyframe.tick;
+    t.prevInput = structuredClone(state.keyframe.prevInput ?? EMPTY_FRAME);
     t.inputsBase = state.keyframe.tick;
     t.keyframes = [structuredClone(state.keyframe)];
     for (const f of state.inputs) t.step(f);

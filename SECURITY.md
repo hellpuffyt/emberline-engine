@@ -25,12 +25,12 @@ determinism is a correctness property games depend on.
 - **Input logs reveal what the player did.** Treat them as personal data if
   you upload them.
 - **The demo's dev server** (`tools/serve.mjs`) is for local use: it serves
-  the repository directory on localhost with a containment check and nothing
-  else.
+  the repository directory on 127.0.0.1 only, with a containment check, and
+  nothing else.
 - **Cross-browser bit-exactness** of floating point is expected from the JS
   specification but not verified in CI across engines.
 
 ## Reporting
 
-Open a security advisory on the GitHub repository. Acknowledgement within
+Open a private security advisory: https://github.com/hellpuffyt/emberline-engine/security/advisories/new Acknowledgement within
 7 days.
