@@ -17,7 +17,12 @@ createServer(async (req, res) => {
     res.writeHead(400).end();
     return;
   }
-  if (path === '/') path = '/demo/index.html';
+  if (path === '/') {
+    // Redirect rather than serve in place: the page's relative URLs
+    // (assets/manifest.json, the sprite strip) must resolve under /demo/.
+    res.writeHead(302, { location: '/demo/index.html' }).end();
+    return;
+  }
   const file = normalize(join(root, path));
   if (!file.startsWith(root + sep)) {
     res.writeHead(403).end();

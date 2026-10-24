@@ -22,7 +22,10 @@ test('demo server survives malformed percent-encoding and refuses traversal', as
   try {
     await new Promise<void>((resolve) => child.stdout.once('data', () => resolve()));
     assert.equal(await get(port, '/%E0%A4%A'), 400);
-    assert.equal(await get(port, '/'), 200); // still alive
+    assert.equal(await get(port, '/'), 302); // still alive, sent to /demo/index.html
+    // The page loads assets relative to its own URL; they must exist there.
+    assert.equal(await get(port, '/demo/index.html'), 200);
+    assert.equal(await get(port, '/demo/assets/manifest.json'), 200);
     assert.notEqual(await get(port, '/../../../../etc/hosts'), 200);
   } finally {
     child.kill();
