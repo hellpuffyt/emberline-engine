@@ -2,6 +2,12 @@
 
 **A 2D game engine where time is a data structure.**
 
+[Case study ↗](https://hellpuff.dev/work/emberline-engine)
+
+<img src="docs/assets/rewind.webp" width="100%" alt="Ember Run mid-rewind: the pixel platformer level with a purple banner reading rewinding tick 268">
+
+*Real screenshot of the bundled* Ember Run *demo (`npm run demo`, Canvas2D) while R is held: the deterministic simulation is rewinding, and the banner shows the tick being restored.*
+
 Emberline runs a fixed-step, deterministic simulation and records every
 input frame. That one design decision gives you, for free and for every game
 built on it: **hold-to-rewind** gameplay, **replays**, **save files that are
@@ -9,8 +15,8 @@ input logs** (tiny, and verifiable by replaying them), **desync-proof
 networking** later, and — as the demo shows — a bot that plays your level by
 *searching the future and rewinding*.
 
-TypeScript, zero runtime dependencies, Canvas2D renderer, ~1,900 lines of
-engine. Runs in the browser and headless in Node.
+TypeScript, zero runtime dependencies, Canvas2D renderer, ~1,300 lines of
+engine (`src/`). Runs in the browser and headless in Node.
 
 ```
 $ npm test
@@ -19,7 +25,9 @@ $ npm test
 $ npm run headless
 search: level completed in 313 expansions, 206 ms, 189 states   # time varies by machine
 tick 900: player at (427.8, 178.0), coins 2/9, deaths 0, won true
+draw calls in one frame: 310
 state hash: 65a217ed  (inputs: 900 ticks)
+sounds in the winning run: jump coin jump jump coin jump win
 fresh replay of the input log: identical
 rewind 120 + replay: identical
 save + load: identical
@@ -81,8 +89,8 @@ rectangles and sprites — because that is not where the idea lives.
   exact, the headless demo's bot completes the level by depth-first search
   over input options, backtracking with `rewind`. Same code path players use.
 - **Determinism is enforced, not hoped for.** `npm run lint` fails the build
-  if engine code touches `Math.random`, `Date.now`, `performance.now` or the
-  DOM outside the backends that own it.
+  if engine code touches `Math.random`, `Date.now`, `performance.now`,
+  `new Date(` or the DOM outside the backends that own it.
 - **Interpolated rendering** at any refresh rate from a 60 Hz simulation,
   with a stall cap so a background tab does not cause a spiral of death.
 
@@ -112,8 +120,28 @@ npm run demo           # http://localhost:8000
 ```
 
 Node 20+. No bundler: the browser loads the compiled ES modules directly.
+CI runs the tests, the headless demo and the asset packer on Ubuntu, Windows
+and macOS with Node 20 and 22. The demo server listens on `127.0.0.1` only.
+
+`npm run pack` rewrites `demo/assets/manifest.json` (currently `1 images, 0
+sounds, 0 data files`: the sprite strip used by the demo).
+
+<img src="docs/assets/ember-run.webp" width="100%" alt="Ember Run pixel platformer level rendered by the Emberline engine at its first frame">
+
+*Real screenshot: Ember Run at its first frame, with coins, spikes, platforms and the goal.*
 
 ## Using it
+
+Emberline is not published to npm. Build it from a clone and install the
+packed tarball into your project:
+
+```
+npm ci && npm run build && npm pack      # writes emberline-0.1.0.tgz
+cd ../your-game && npm install ../emberline-engine/emberline-0.1.0.tgz
+```
+
+The package exports `emberline` (engine) and `emberline/canvas`
+(`CanvasRenderer`).
 
 ```ts
 import { World, Timeline, physicsSystem, held, type Body, type System } from 'emberline';
