@@ -2,15 +2,21 @@
 
 **A 2D game engine where time is a data structure.**
 
-Emberline runs a fixed-step, deterministic simulation and records every
-input frame. That one design decision gives you, for free and for every game
-built on it: **hold-to-rewind** gameplay, **replays**, **save files that are
-input logs** (tiny, and verifiable by replaying them), **desync-proof
-networking** later, and — as the demo shows — a bot that plays your level by
-*searching the future and rewinding*.
+[Case study ↗](https://hellpuff.dev/work/emberline-engine)
 
-TypeScript, zero runtime dependencies, Canvas2D renderer, ~1,900 lines of
-engine. Runs in the browser and headless in Node.
+<img src="docs/assets/rewind.webp" width="100%" alt="Ember Run mid-rewind: the pixel platformer level with a purple banner reading rewinding tick 268">
+
+*Real screenshot of the bundled* Ember Run *demo (`npm run demo`, Canvas2D) while R is held: the deterministic simulation is rewinding, and the banner shows the tick being restored.*
+
+Emberline runs a fixed-step, deterministic simulation and records every
+input frame. Because the state at any tick is a function of the starting
+state and the inputs, the engine can rewind (hold R in the demo), replay a
+run, and store a save file as a keyframe plus an input log that is checked by
+replaying it. The headless demo uses the same rewind to let a bot finish the
+level by searching ahead and backtracking.
+
+TypeScript, zero runtime dependencies, Canvas2D renderer, ~1,300 lines of
+engine (`src/`). Runs in the browser and headless in Node.
 
 ```
 $ npm test
@@ -19,20 +25,22 @@ $ npm test
 $ npm run headless
 search: level completed in 313 expansions, 206 ms, 189 states   # time varies by machine
 tick 900: player at (427.8, 178.0), coins 2/9, deaths 0, won true
+draw calls in one frame: 310
 state hash: 65a217ed  (inputs: 900 ticks)
+sounds in the winning run: jump coin jump jump coin jump win
 fresh replay of the input log: identical
 rewind 120 + replay: identical
 save + load: identical
 headless run OK
 ```
 
-**Play it:** `npm run demo` → http://localhost:8000 — *Ember Run*, a
+**Play it:** run `npm run demo` and open http://localhost:8000. *Ember Run* is a
 platformer with coins, spikes, a moving platform and a goal. Arrow keys /
 WASD move, Space jumps (variable height, coyote time), **hold R to rewind
 time** and branch, F5/F9 save and load, `` ` `` shows the debug overlay
 (fps, tick, entity count, state hash).
 
-## What is it?
+## Modules
 
 | Module | What it gives you |
 |---|---|
@@ -48,57 +56,47 @@ time** and branch, F5/F9 save and load, `` ` `` shows the debug overlay
 | `save` | `saveGame`/`loadGame`: keyframe + input log + hash; loading replays and refuses a file whose replay diverges. |
 | `debug` | Frame stats, an overlay (fps, tick, history window, entity count, state hash), an entity inspector. |
 
-## Who is it for?
+## Why use it
 
-- Developers making **precision platformers, puzzle games, roguelikes or
-  fighting games**, where rewind, replays and reproducibility are features,
-  not debugging luxuries.
-- **Speedrun and tool-assisted communities**: a save is a replay; a replay is
-  a proof.
-- Anyone who wants an engine **small enough to read in an evening** and
-  typed end to end.
+It is aimed at games where rewind, replays and reproducible runs are part
+of the design: precision platformers, puzzle games, roguelikes, or anything
+where a save should be verifiable as a replay. General-purpose engines such
+as Phaser or PixiJS leave determinism to you, and `Math.random()` or
+`Date.now()` calls in game systems quietly break it. In Emberline the
+simulation only sees its inputs and a seeded RNG, and a lint rule fails the
+build if engine code reaches for wall-clock time, `Math.random` or the DOM.
+Rendering is kept simple (Canvas2D rectangles and sprites); the timeline is
+the part that matters.
 
-## Why does it exist?
+What that gives you in practice:
 
-Phaser, PixiJS and friends are renderers with game loops bolted on; time
-travel, replays and deterministic saves are things you build yourself, and
-you usually discover too late that `Math.random()` and `Date.now()` are
-scattered through your systems. Emberline flips the priority: the simulation
-is a pure function of inputs *by construction* (a lint enforces it), and the
-timeline is the engine's spine. Rendering is deliberately simple — Canvas2D,
-rectangles and sprites — because that is not where the idea lives.
+- `timeline.rewind(60)` restores the exact state from one second earlier at
+  60 Hz, and play continues on a new branch.
+- A save is a keyframe plus the inputs since. Loading replays them through
+  your systems and compares the recorded hash, so a save from a different
+  build or an edited file is rejected. This is an integrity check, not a
+  signature (see `SECURITY.md`).
+- The headless bot completes the level by depth-first search over input
+  options, backtracking with `rewind`, through the same code path a player
+  uses.
+- `npm run lint` fails if engine code touches `Math.random`, `Date.now`,
+  `performance.now`, `new Date(` or the DOM outside the backends that own it.
+- `GameLoop` renders with interpolation at any refresh rate from a 60 Hz
+  simulation, and caps catch-up at 8 steps per frame so a background tab
+  does not cause a spiral of death.
 
-## What makes it different?
+## What the tests cover
 
-- **Rewind is a primitive.** `timeline.rewind(60)` restores the exact state
-  one second ago and lets play continue on a new branch. The demo binds it to
-  a key.
-- **Saves replay, and verify.** A save file is a keyframe plus the inputs
-  since. Loading replays them through your systems and checks the recorded
-  hash, so a save from a different build or a tampered file is rejected
-  loudly rather than loading garbage.
-- **The engine can search.** Because stepping and rewinding are cheap and
-  exact, the headless demo's bot completes the level by depth-first search
-  over input options, backtracking with `rewind`. Same code path players use.
-- **Determinism is enforced, not hoped for.** `npm run lint` fails the build
-  if engine code touches `Math.random`, `Date.now`, `performance.now` or the
-  DOM outside the backends that own it.
-- **Interpolated rendering** at any refresh rate from a 60 Hz simulation,
-  with a stall cap so a background tab does not cause a spiral of death.
-
-## Why is this not just a tutorial?
-
-Every claim above has a test: identical hashes for identical inputs (and
-different for a different seed), rewind to an exact earlier hash with future
-inputs forgotten, scrubbing that preserves the future, history bounds,
-save/load round trip *and* rejection of edited files (an integrity check,
-not a signature — see `SECURITY.md`), property tests that replay, rewind,
-seek and save/load hundreds of random input logs (including across
-history trimming), loop step accounting, physics
-resolution on both axes with sides reported, triggers that do not block,
-keyboard sticky taps, asset packing from real PNG bytes, scene stacking,
-audio from events, behaviours failing loudly when unregistered. CI runs the
-headless demo end to end.
+Identical hashes for identical inputs (and different ones for a different
+seed); rewind to an exact earlier hash with future inputs dropped; seeking
+that keeps the future; history bounds; save/load round trips and rejection of
+edited files; property tests that replay, rewind, seek and save/load 60
+random input logs each, including across history trimming; loop step
+accounting; physics resolution on both axes with the contact side reported;
+non-blocking triggers; keyboard sticky taps; asset packing from real PNG
+bytes; scene stacking; audio from events; unregistered behaviours failing
+with an error; and the demo server rejecting malformed URLs and path
+traversal. CI also runs the headless demo end to end.
 
 ## Build, test, run
 
@@ -112,8 +110,28 @@ npm run demo           # http://localhost:8000
 ```
 
 Node 20+. No bundler: the browser loads the compiled ES modules directly.
+CI runs the tests, the headless demo and the asset packer on Ubuntu, Windows
+and macOS with Node 20 and 22. The demo server listens on `127.0.0.1` only.
+
+`npm run pack` rewrites `demo/assets/manifest.json` (currently `1 images, 0
+sounds, 0 data files`: the sprite strip used by the demo).
+
+<img src="docs/assets/ember-run.webp" width="100%" alt="Ember Run pixel platformer level rendered by the Emberline engine at its first frame">
+
+*Real screenshot: Ember Run at its first frame, with coins, spikes, platforms and the goal.*
 
 ## Using it
+
+Emberline is not published to npm. Build it from a clone and install the
+packed tarball into your project:
+
+```
+npm ci && npm run build && npm pack      # writes emberline-0.1.0.tgz
+cd ../your-game && npm install ../emberline-engine/emberline-0.1.0.tgz
+```
+
+The package exports `emberline` (engine) and `emberline/canvas`
+(`CanvasRenderer`).
 
 ```ts
 import { World, Timeline, physicsSystem, held, type Body, type System } from 'emberline';
@@ -135,7 +153,7 @@ timeline.step({ keys: ['ArrowRight'] });
 timeline.rewind(1);
 ```
 
-## Limits (honest)
+## Limitations
 
 - Canvas2D only: rectangles, sprites, text. No WebGL, lighting, particles
   or tilemap renderer (yet).
@@ -149,16 +167,15 @@ timeline.rewind(1);
 
 ## Documentation
 
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — the timeline model, keyframes, rewind, loop
-- [`SECURITY.md`](SECURITY.md) — save-file trust, determinism guarantees
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): the timeline model, keyframes, rewind, loop
+- [`SECURITY.md`](SECURITY.md): save-file trust, determinism guarantees
 - [`TESTING.md`](TESTING.md), [`ROADMAP.md`](ROADMAP.md), [`CONTRIBUTING.md`](CONTRIBUTING.md), [`CHANGELOG.md`](CHANGELOG.md)
 
-## Why star or contribute?
+## Contributing
 
-Star it if you have ever wanted to press R and undo a bad jump, or wanted a
-save file you could diff. Contribute a tilemap renderer, a particle system, a
-gamepad source, a WebGL backend, or rollback netcode — the timeline already
-does the hard part of the last one.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Useful additions are listed in
+[`ROADMAP.md`](ROADMAP.md): a tilemap renderer, particles, a gamepad input
+source, a WebGL backend, or rollback netcode on top of the existing timeline.
 
 ## License
 
